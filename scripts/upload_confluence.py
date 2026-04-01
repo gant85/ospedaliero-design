@@ -34,6 +34,7 @@ Examples:
 import os
 import re
 import logging
+import html
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import requests
@@ -196,10 +197,11 @@ class ConfluenceUploader:
         content = re.sub(r'^@startuml.*\n?', '', content, flags=re.MULTILINE)
         content = re.sub(r'\n?@enduml\s*$', '', content, flags=re.MULTILINE)
 
+        escaped_code = html.escape(f"@startuml\n{content}\n@enduml")
+
         if use_external_server:
             # Use public PlantUML server to generate SVG image
             import zlib
-            import base64
 
             # Prepare complete content
             full_content = f"@startuml\n{content}\n@enduml"
@@ -242,34 +244,23 @@ class ConfluenceUploader:
             # URL del server PlantUML pubblico (SVG format)
             plantuml_url = f"http://www.plantuml.com/plantuml/svg/{encoded}"
 
-            # Use ac:image macro with data attributes for Confluence's native lightbox
-            # The key is to use ac:image without external link wrapper
-            confluence_content = f'''<ac:structured-macro ac:name="expand">
-<ac:parameter ac:name="title">📊 PlantUML Code</ac:parameter>
-<ac:rich-text-body>
-<ac:structured-macro ac:name="code">
-<ac:parameter ac:name="language">plantuml</ac:parameter>
-<ac:plain-text-body><![CDATA[@startuml
-{content}
-@enduml]]></ac:plain-text-body>
-</ac:structured-macro>
-</ac:rich-text-body>
-</ac:structured-macro>
-<p>
-<ac:image ac:thumbnail="true" ac:width="800">
-<ri:url ri:value="{plantuml_url}" />
-</ac:image>
-</p>
-<p style="font-size: 0.9em; color: #666;">💡 <em>Click diagram to view full size</em></p>'''
+            # Keep generated markup Fabric-compatible by avoiding extension macros.
+            confluence_content = (
+                f'<ac:structured-macro ac:name="expand">'
+                f'<ac:parameter ac:name="title">PlantUML Code</ac:parameter>'
+                f'<ac:rich-text-body><pre><code>{escaped_code}</code></pre></ac:rich-text-body>'
+                f'</ac:structured-macro>'
+                f'<p><img src="{plantuml_url}" alt="PlantUML diagram" width="800" /></p>'
+                f'<p><a href="{plantuml_url}" target="_blank">Open full-size diagram</a></p>'
+            )
         else:
-            # Use Confluence PlantUML macro (requires macro installation)
-            confluence_content = f'''<ac:structured-macro ac:name="plantuml" ac:schema-version="1">
-<ac:plain-text-body><![CDATA[
-@startuml
-{content}
-@enduml
-]]></ac:plain-text-body>
-</ac:structured-macro>'''
+            # Fallback to plain code when external image rendering is disabled.
+            confluence_content = (
+                f'<ac:structured-macro ac:name="expand">'
+                f'<ac:parameter ac:name="title">PlantUML Code</ac:parameter>'
+                f'<ac:rich-text-body><pre><code>{escaped_code}</code></pre></ac:rich-text-body>'
+                f'</ac:structured-macro>'
+            )
 
         return confluence_content
 
@@ -292,7 +283,8 @@ class ConfluenceUploader:
             language = match.group(1) or 'none'
             code = match.group(2)
             placeholder = f'___CODE_BLOCK_{len(code_blocks)}___'
-            code_blocks.append(f'<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">{language}</ac:parameter><ac:plain-text-body><![CDATA[{code}]]></ac:plain-text-body></ac:structured-macro>')
+            escaped_code = html.escape(code)
+            code_blocks.append(f'<pre><code class="language-{language}">{escaped_code}</code></pre>')
             return placeholder
 
         content = re.sub(r'```(\w+)?\n(.*?)```', protect_code_block, content, flags=re.DOTALL)
@@ -302,7 +294,7 @@ class ConfluenceUploader:
         def protect_inline_code(match):
             code_text = match.group(1)
             placeholder = f'___INLINE_CODE_{len(inline_codes)}___'
-            inline_codes.append(f'<code>{code_text}</code>')
+            inline_codes.append(f'<code>{html.escape(code_text)}</code>')
             return placeholder
 
         content = re.sub(r'`([^`]+?)`', protect_inline_code, content)
@@ -409,10 +401,10 @@ class ConfluenceUploader:
             items = re.findall(r'^[\-\*]\s+(.+)$', list_text, re.MULTILINE)
             if not items:
                 return list_text
-            html = '<p><ul>'
+            html = '<ul>'
             for item in items:
                 html += f'<li>{item}</li>'
-            html += '</ul></p>'
+            html += '</ul>'
             return html
 
         # Ordered lists (1. item, 2. item, etc.)
@@ -421,10 +413,10 @@ class ConfluenceUploader:
             items = re.findall(r'^\d+\.\s+(.+)$', list_text, re.MULTILINE)
             if not items:
                 return list_text
-            html = '<p><ol>'
+            html = '<ol>'
             for item in items:
                 html += f'<li>{item}</li>'
-            html += '</ol></p>'
+            html += '</ol>'
             return html
 
         # Convert lists (process after code blocks and inline code to avoid conflicts)
@@ -435,14 +427,17 @@ class ConfluenceUploader:
         content = re.sub(r'^---+$', '<hr/>', content, flags=re.MULTILINE)
 
         # Info/Warning/Note panels
-        content = re.sub(r'^\*\*Note:\*\*(.+)$', r'<ac:structured-macro ac:name="info"><ac:rich-text-body>\1</ac:rich-text-body></ac:structured-macro>', content, flags=re.MULTILINE)
-        content = re.sub(r'^\*\*Warning:\*\*(.+)$', r'<ac:structured-macro ac:name="warning"><ac:rich-text-body>\1</ac:rich-text-body></ac:structured-macro>', content, flags=re.MULTILINE)
+        content = re.sub(r'^\*\*Note:\*\*(.+)$', r'<p><strong>Note:</strong>\1</p>', content, flags=re.MULTILINE)
+        content = re.sub(r'^\*\*Warning:\*\*(.+)$', r'<p><strong>Warning:</strong>\1</p>', content, flags=re.MULTILINE)
 
         # Blockquotes (> text)
         content = re.sub(r'^>\s*(.+)$', r'<blockquote>\1</blockquote>', content, flags=re.MULTILINE)
 
         # Paragraphs (line breaks)
         content = re.sub(r'\n\n', '<p></p>', content)
+
+        # Confluence storage expects XML-safe content: escape bare ampersands.
+        content = re.sub(r'&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z][a-zA-Z0-9]+;)', '&amp;', content)
 
         # STEP 4: Restore protected inline code
         for i, code_html in enumerate(inline_codes):

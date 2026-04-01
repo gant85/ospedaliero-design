@@ -1,8 +1,8 @@
 {
   "default_base_url": "https://ahi-service.atlassian.net/wiki",
-  "default_space_key": "AHIIT",
-  "default_parent_id": "531005441",
-  "project_name": "Reference app Laravel-Vue",
+  "default_space_key": "~712020d3f0f462445c4e1fb128ad2a9d61812f",
+  "default_parent_id": "732856367",
+  "project_name": "Ospedaliero",
   "docs_dir": "docs",
   "action": "upload",
   "single_file": null,

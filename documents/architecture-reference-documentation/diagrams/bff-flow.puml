@@ -1,0 +1,92 @@
+@startuml bff-flow
+!include <C4/C4_Sequence>
+!include <logos/vue>
+!include <logos/laravel>
+!include <logos/redis>
+!include <logos/postgresql>
+
+title BFF Pattern - Request Flow
+
+Person(user, "User")
+System(vue, "Vue.js SPA")
+System(inertia, "Inertia.js")
+System(laravel, "Laravel Route")
+System(controller, "DashboardController")
+System(service, "ExternalApiService")
+SystemDb(redis, "Redis Cache")
+System_Ext(api, "External API")
+SystemDb(postgres, "PostgreSQL")
+
+user -> vue : Click "View Users"
+activate vue
+
+vue -> inertia : Inertia.visit('/users')
+activate inertia
+
+inertia -> laravel : GET /users (HTTP)
+activate laravel
+
+laravel -> controller : DashboardController@users()
+activate controller
+
+controller -> service : getUsers(page: 1, perPage: 20)
+activate service
+
+service -> redis : get('external_api:users:1:20')
+activate redis
+redis --> service : null (cache miss)
+deactivate redis
+
+service -> api : GET /users?page=1&per_page=20\nAuthorization: Bearer {token}
+activate api
+api --> service : 200 OK\n{"data": [...users], "total": 100}
+deactivate api
+
+service -> service : transformUsers(data)
+service -> redis : put('external_api:users:1:20', data, 300)
+activate redis
+redis --> service : OK
+deactivate redis
+
+service --> controller : ["users" => [...], "pagination" => [...]]
+deactivate service
+
+controller -> controller : Build response data
+
+controller --> laravel : Inertia::render('Users', $data)
+deactivate controller
+
+laravel --> inertia : HTML + props (JSON)
+deactivate laravel
+
+inertia -> inertia : Hydrate Vue component
+inertia --> vue : Update component props
+deactivate inertia
+
+vue -> vue : Render user list
+vue --> user : Display users
+deactivate vue
+
+note right of service
+  **Cache Strategy:**
+  - User list: 5 minutes
+  - Statistics: 1 minute
+  - User details: 5 minutes
+
+  **Error Handling:**
+  - Retry 3 times (100ms delay)
+  - Fallback to empty array
+  - Log errors with context
+end note
+
+note right of postgres
+  **Minimal DB Usage:**
+  PostgreSQL stores only:
+  - User sessions
+  - Cache entries (alternative)
+  - User preferences
+
+  NOT business data!
+end note
+
+@enduml

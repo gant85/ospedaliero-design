@@ -1,0 +1,84 @@
+@startuml architecture
+!include <C4/C4_Container>
+!include <azure/AzureCommon>
+!include <azure/Identity/AzureActiveDirectory>
+!include <azure/Compute/AzureAppService>
+!include <azure/Management/AzureMonitor>
+!include <logos/vue>
+!include <logos/laravel>
+!include <logos/redis>
+!include <logos/postgresql>
+!include <logos/nginx>
+!include <logos/composer>
+!include <logos/sonarqube>
+
+title Showcase Application - Technology Architecture
+
+LAYOUT_LEFT_RIGHT()
+
+Person(user, "User", "Web Browser")
+
+System_Boundary(frontend, "Frontend Layer") {
+    Container(vue, "Vue.js SPA", "Vue 3.5 + TypeScript", "Single Page Application with Material Design 3", $sprite="vue")
+    Container(vuetify, "Vuetify 3.7", "Material Design", "UI Component Library")
+    Container(vite, "Vite 6.0", "Build Tool", "HMR Development Server")
+}
+
+System_Boundary(bridge, "SPA Bridge") {
+    Container(inertia, "Inertia.js 2.1", "SPA Adapter", "Server-side routing with client-side navigation")
+}
+
+System_Boundary(backend, "Backend Layer (BFF)") {
+    Container(laravel, "Laravel 12", "PHP 8.2 Framework", "Backend for Frontend aggregation layer", $sprite="laravel")
+    Container(service, "ExternalApiService", "HTTP Client", "API aggregation & caching")
+    Container(nginx, "Nginx", "Web Server", "Reverse proxy & static files", $sprite="nginx")
+}
+
+System_Boundary(data, "Data Layer") {
+    ContainerDb(postgres, "PostgreSQL 16", "Relational DB", "Sessions, cache, preferences only", $sprite="postgresql")
+    ContainerDb(redis, "Redis 7", "Key-Value Store", "API response caching", $sprite="redis")
+}
+
+System_Boundary(external, "External Systems") {
+    System_Ext(api1, "External API #1", "User Service")
+    System_Ext(api2, "External API #2", "Order Service")
+    System_Ext(api3, "External API #3", "Analytics Service")
+}
+
+System_Boundary(auth, "Authentication") {
+    AzureActiveDirectory(entra, "Azure Entra ID", "OAuth2/OIDC", "Single Sign-On with Microsoft")
+}
+
+System_Boundary(observability, "Observability") {
+    Container(otel, "OpenTelemetry", "Tracing SDK", "Distributed tracing")
+    Container(jaeger, "Jaeger", "Trace Backend", "Trace visualization & analysis")
+}
+
+System_Boundary(cloud, "Azure Cloud") {
+    AzureAppService(appservice, "App Service", "PHP 8.2 Linux", "Production hosting")
+    AzureMonitor(insights, "Application Insights", "OpenTelemetry", "Distributed tracing & logs")
+}
+
+' Relationships
+Rel(user, vue, "Uses", "Browser")
+Rel(user, entra, "Login", "OAuth2")
+Rel(entra, laravel, "Callback", "Authorization code")
+Rel(vue, inertia, "SPA navigation", "Inertia protocol")
+Rel(inertia, laravel, "HTTP request", "GET/POST")
+Rel(inertia, nginx, "HTTP Request", "GET /users")
+Rel(nginx, laravel, "FastCGI", "PHP-FPM")
+Rel(laravel, service, "Calls", "Dependency Injection")
+Rel(service, redis, "Cache lookup", "TCP 6379")
+Rel(service, api1, "HTTP GET", "Bearer token")
+Rel(service, api2, "HTTP GET", "Bearer token")
+Rel(service, api3, "HTTP GET", "Bearer token")
+Rel(laravel, postgres, "Query", "TCP 5432")
+Rel(vue, otel, "Traces", "OTLP HTTP")
+Rel(laravel, otel, "Traces", "OTLP gRPC")
+Rel(otel, jaeger, "Export", "OTLP")
+Rel(vite, vue, "Builds", "ES Modules")
+
+' Production deployment
+Rel(appservice, insights, "Telemetry", "OTLP")
+
+@enduml

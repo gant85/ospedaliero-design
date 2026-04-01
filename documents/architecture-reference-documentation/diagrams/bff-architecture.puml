@@ -1,0 +1,76 @@
+@startuml bff-architecture
+!include <C4/C4_Component>
+!include <logos/vue>
+!include <logos/laravel>
+!include <logos/redis>
+
+title BFF Architecture - Laravel Backend for Frontend
+
+LAYOUT_TOP_DOWN()
+
+Container_Boundary(browser, "Browser (Vue SPA)") {
+    Component(dashboard_vue, "Pages/Dashboard.vue", "Vue Component", "• Receives props from Inertia\n• Displays aggregated data\n• No direct API calls", $sprite="vue")
+}
+
+Rel_Down(dashboard_vue, inertia, "Inertia.js (HTTP)", "")
+
+Container_Boundary(laravel_bff, "Laravel BFF Layer (PHP 8.2)") {
+    Component(controller, "Controllers/DashboardController.php", "Laravel Controller", "• Receives HTTP request\n• Calls ExternalApiService\n• Aggregates data from multiple APIs\n• Transforms data for UI\n• Returns Inertia response", $sprite="laravel")
+
+    Component(service, "Services/ExternalApiService.php", "Service Layer", "• Makes HTTP calls to external APIs\n• Implements caching (Redis)\n• Retry logic & error handling\n• Parallel request support\n• Data transformation", $sprite="laravel")
+}
+
+Rel_Down(inertia, controller, "", "")
+Rel_Down(controller, service, "", "")
+
+Container_Boundary(external_apis, "External APIs") {
+    System_Ext(api1, "External API #1", "(Users)")
+    System_Ext(api2, "External API #2", "(Orders)")
+    System_Ext(api3, "External API #3", "(Analytics)")
+}
+
+Rel_Down(service, api1, "", "")
+Rel_Down(service, api2, "", "")
+Rel_Down(service, api3, "", "")
+
+note right of dashboard_vue
+  **Vue Component**
+  Single Page Application
+  Material Design 3 (Vuetify)
+
+  No API logic - just presentation
+end note
+
+note right of controller
+  **Request Handler**
+  Orchestrates data fetching
+  Aggregates multiple API responses
+  Transforms data for frontend
+
+  Example:
+  public function dashboard() {
+    $users = $this->service->getUsers();
+    $orders = $this->service->getOrders();
+    return Inertia::render('Dashboard', [
+      'users' => $users,
+      'orders' => $orders
+    ]);
+  }
+end note
+
+note right of service
+  **API Aggregation Layer**
+  • Redis caching (5 min TTL)
+  • Retry policy (3 attempts)
+  • Circuit breaker pattern
+  • Parallel requests (Promise::all)
+  • Error fallbacks
+
+  Benefits:
+  ✓ Single point of API integration
+  ✓ Centralized error handling
+  ✓ Consistent caching strategy
+  ✓ Easy testing & mocking
+end note
+
+@enduml

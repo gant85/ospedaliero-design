@@ -1,0 +1,30 @@
+@startuml
+' Architecture Layers Diagram
+skinparam rectangle {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+}
+
+rectangle "Browser (Vue SPA)" as Browser {
+  rectangle "Pages/Dashboard.vue\nReceives props from Inertia\nDisplays aggregated data\nNo direct API calls" as Dashboard
+}
+
+rectangle "Inertia.js (HTTP)" as Inertia
+
+rectangle "Laravel BFF Layer (PHP 8.2)" as Laravel {
+  rectangle "Controllers/DashboardController.php\nReceives HTTP request\nCalls ExternalApiService\nAggregates data from APIs\nTransforms data for UI\nReturns Inertia response" as Controller
+  rectangle "Services/ExternalApiService.php\nMakes HTTP calls to external APIs\nImplements caching (Redis)\nRetry logic & error handling\nParallel request support\nData transformation" as Service
+}
+
+rectangle "External API #1\n(Users)" as API1
+rectangle "External API #2\n(Orders)" as API2
+rectangle "External API #3\n(Analytics)" as API3
+
+Browser -down-> Inertia
+Inertia -down-> Laravel
+Laravel -down-> Controller
+Controller -down-> Service
+Service -down-> API1
+Service -down-> API2
+Service -down-> API3
+@enduml

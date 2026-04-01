@@ -1,0 +1,119 @@
+@startuml opentelemetry-flow
+!include <C4/C4_Sequence>
+!include <logos/vue>
+!include <logos/laravel>
+
+title OpenTelemetry Distributed Tracing Flow
+
+Person(user, "User")
+System(vue, "Vue.js")
+System(otel_browser, "OTEL Browser SDK")
+System(laravel, "Laravel")
+System(otel_php, "OTEL PHP SDK")
+System_Ext(external_api, "External API")
+System(jaeger, "Jaeger")
+
+user -> vue : Click button
+activate vue
+
+vue -> otel_browser : startSpan('user.click')
+activate otel_browser
+otel_browser --> vue : span
+vue -> vue : Handle click event
+
+vue -> otel_browser : startSpan('inertia.visit')
+otel_browser --> vue : span
+vue -> laravel : GET /users (Inertia request)
+activate laravel
+
+laravel -> otel_php : startSpan('http.server')
+activate otel_php
+otel_php --> laravel : span
+
+laravel -> otel_php : startSpan('controller.dashboard')
+otel_php --> laravel : span
+
+laravel -> otel_php : startSpan('service.external_api')
+otel_php --> laravel : span
+
+laravel -> external_api : GET /users\nAuthorization: Bearer {token}
+activate external_api
+
+laravel -> otel_php : setAttribute('http.url', url)
+laravel -> otel_php : setAttribute('http.method', 'GET')
+
+external_api --> laravel : 200 OK\n{"data": [...]}
+deactivate external_api
+
+laravel -> otel_php : setAttribute('http.status_code', 200)
+laravel -> otel_php : endSpan('service.external_api')
+
+laravel -> otel_php : endSpan('controller.dashboard')
+laravel -> otel_php : endSpan('http.server')
+
+laravel --> vue : Inertia response (HTML + JSON props)
+deactivate laravel
+
+vue -> otel_browser : endSpan('inertia.visit')
+vue -> otel_browser : endSpan('user.click')
+
+otel_browser -> jaeger : Export traces\nOTLP HTTP (port 4318)
+activate jaeger
+deactivate otel_browser
+
+otel_php -> jaeger : Export traces\nOTLP gRPC (port 4317)
+deactivate otel_php
+
+vue -> vue : Render data
+vue --> user : Display results
+deactivate vue
+
+jaeger -> jaeger : Store & index traces
+deactivate jaeger
+
+note right of jaeger
+  **Trace Visualization:**
+  Access: http://localhost:16686
+
+  **Trace Details:**
+  • Total duration (frontend + backend)
+  • Individual span timings
+  • External API latency
+  • Cache hit/miss
+  • Database queries
+
+  **Attributes:**
+  • service.name
+  • http.url, http.method
+  • http.status_code
+  • user.id
+  • custom attributes
+end note
+
+note right of otel_browser
+  **Frontend Instrumentation:**
+  • User interactions (clicks, forms)
+  • Inertia.js navigation
+  • Component lifecycle
+  • Fetch/XHR requests
+
+  **Auto-instrumentation:**
+  • Document load
+  • Resource timing
+  • XMLHttpRequest
+  • Fetch API
+end note
+
+note right of otel_php
+  **Backend Instrumentation:**
+  • HTTP server (Laravel routes)
+  • Database queries (PostgreSQL)
+  • Cache operations (Redis)
+  • External API calls (Guzzle)
+  • Queue jobs
+
+  **Automatic context propagation:**
+  Trace ID passed from frontend to backend
+end note
+
+@enduml

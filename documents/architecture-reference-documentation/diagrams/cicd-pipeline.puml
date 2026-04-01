@@ -1,0 +1,116 @@
+@startuml cicd-pipeline
+!include <C4/C4_Dynamic>
+!include <azure/AzureCommon>
+!include <azure/Compute/AzureAppService>
+!include <azure/DevOps/AzureDevOps>
+!include <logos/sonarqube>
+!include <logos/composer>
+!include <logos/laravel>
+!include <logos/vue>
+
+title CI/CD Pipeline - Azure DevOps
+
+LAYOUT_TOP_DOWN()
+
+Person(dev, "Developer")
+System(git, "Git Repository")
+System(azdo, "Azure DevOps")
+
+System_Boundary(build, "Build Stage (Parallel)") {
+    System(frontend_quality, "Frontend Quality\nESLint + TypeScript + Sheriff")
+    System(frontend_tests, "Frontend Tests\nVitest + Coverage")
+    System(backend_quality, "Backend Quality\nPint + PHPStan")
+    System(backend_tests, "Backend Tests\nPest + Coverage")
+    System(sonar, "SonarCloud\nQuality Gate")
+    System(build_app, "Build App\nVite + Composer")
+}
+
+System(artifact, "Build Artifact\nshowcase-app.zip")
+
+System_Boundary(deploy_dev, "Deploy Dev (develop branch)") {
+    System(deploy_dev_app, "Deploy to Azure\nDev Environment")
+    System(migrate_dev, "Run Migrations\nphp artisan migrate")
+}
+
+System_Boundary(deploy_prod, "Deploy Production (main branch)") {
+    System(deploy_prod_app, "Deploy to Azure\nProduction Environment")
+    System(migrate_prod, "Run Migrations\nphp artisan migrate --force")
+    System(optimize, "Optimize Cache\nconfig + route + view")
+    System(confluence, "Update Confluence\nDocumentation")
+}
+
+System(azure_dev, "Azure App Service\n(Dev)")
+System(azure_prod, "Azure App Service\n(Production)")
+
+' Flow
+dev -> git : git push origin feature/xyz
+git -> azdo : Trigger Pipeline (PR)
+
+azdo -> frontend_quality : Run (parallel)
+azdo -> frontend_tests : Run (parallel)
+azdo -> backend_quality : Run (parallel)
+azdo -> backend_tests : Run (parallel)
+
+frontend_quality -> sonar : Send results
+frontend_tests -> sonar : Send coverage
+backend_quality -> sonar : Send results
+backend_tests -> sonar : Send coverage
+
+sonar -> build_app : Quality Gate PASSED
+
+build_app -> artifact : Publish artifact
+
+' Deploy Dev
+artifact -> deploy_dev_app : develop branch only
+deploy_dev_app -> azure_dev : ZIP Deploy
+deploy_dev_app -> migrate_dev : SSH command
+migrate_dev -> azure_dev : Apply migrations
+
+' Deploy Production
+artifact -> deploy_prod_app : main branch only
+deploy_prod_app -> azure_prod : ZIP Deploy
+deploy_prod_app -> migrate_prod : SSH command
+migrate_prod -> optimize : SSH command
+optimize -> confluence : Python script
+confluence -> azure_prod : Complete
+
+note right of build
+  **Parallel Execution:**
+  All quality checks run simultaneously
+  ~5-7 minutes total build time
+
+  **Quality Gates:**
+  • ESLint: No errors
+  • TypeScript: No type errors
+  • Sheriff: Architecture rules pass
+  • Vitest: 80%+ coverage
+  • Pest: All tests pass
+  • SonarCloud: Quality Gate pass
+end note
+
+note right of artifact
+  **Artifact Contents:**
+  • public/build/ (Vite assets)
+  • app/ (PHP source)
+  • vendor/ (--no-dev)
+  • config/, routes/, database/
+  • .env excluded (set in Azure)
+
+  **Size:** ~50-80 MB (compressed)
+end note
+
+note right of deploy_prod
+  **Production Deployment:**
+  1. Deploy artifact via ZIP
+  2. Run database migrations
+  3. Optimize Laravel cache:
+     • php artisan config:cache
+     • php artisan route:cache
+     • php artisan view:cache
+  4. Upload docs to Confluence
+
+  **Rollback Strategy:**
+  Previous deployment slot available
+end note
+
+@enduml

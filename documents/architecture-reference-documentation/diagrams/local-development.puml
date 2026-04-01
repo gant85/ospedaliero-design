@@ -1,0 +1,94 @@
+@startuml local-development
+!include <C4/C4_Deployment>
+!include <logos/vue>
+!include <logos/laravel>
+!include <logos/nginx>
+!include <logos/postgresql>
+!include <logos/redis>
+!include <logos/composer>
+
+title Local Development Environment
+
+Deployment_Node(dev_machine, "Developer Machine", "Windows/macOS/Linux") {
+    Deployment_Node(browser, "Web Browser", "Chrome/Firefox") {
+        Container(browser_app, "Application", "Vue.js SPA", "User interface", $sprite="vue")
+    }
+
+    Deployment_Node(docker, "Docker Desktop", "Docker Compose") {
+        Deployment_Node(nginx_container, "reference-app-laravel-vue-nginx", "nginx:alpine") {
+            Container(nginx, "Nginx", "Web Server", "Port 8000", $sprite="nginx")
+        }
+
+        Deployment_Node(php_container, "reference-app-laravel-vue-php", "PHP 8.2-FPM") {
+            Container(laravel, "Laravel", "PHP Application", "BFF Layer", $sprite="laravel")
+            Container(composer, "Composer", "Dependency Manager", "vendor/", $sprite="composer")
+        }
+
+        Deployment_Node(node_container, "reference-app-laravel-vue-node", "Node 18") {
+            Container(vite, "Vite", "Dev Server", "Port 5173 (HMR)")
+            Container(pnpm, "pnpm", "Package Manager", "node_modules/")
+        }
+
+        Deployment_Node(postgres_container, "reference-app-laravel-vue-postgres", "PostgreSQL 16") {
+            ContainerDb(postgres, "Database", "SQL Database", "Port 5432", $sprite="postgresql")
+        }
+
+        Deployment_Node(redis_container, "reference-app-laravel-vue-redis", "Redis 7") {
+            ContainerDb(redis, "Cache", "Key-Value Store", "Port 6379", $sprite="redis")
+        }
+
+        Deployment_Node(jaeger_container, "reference-app-laravel-vue-jaeger", "Jaeger All-in-One") {
+            Container(jaeger_ui, "Jaeger UI", "Trace Viewer", "Port 16686")
+            Container(otlp_http, "OTLP HTTP", "Collector", "Port 4318")
+            Container(otlp_grpc, "OTLP gRPC", "Collector", "Port 4317")
+        }
+    }
+}
+
+System_Ext(external_api, "External APIs", "REST APIs (JSONPlaceholder)")
+
+' Relationships
+Rel(browser_app, nginx, "HTTP", "localhost:8000")
+Rel(browser_app, vite, "WebSocket", "localhost:5173 (HMR)")
+Rel(nginx, laravel, "FastCGI", "PHP-FPM")
+Rel(nginx, vite, "Proxy", "/build/*")
+Rel(laravel, postgres, "TCP", "5432")
+Rel(laravel, redis, "TCP", "6379")
+Rel(laravel, external_api, "HTTPS", "Bearer Token")
+Rel(laravel, otlp_grpc, "OTLP", "4317")
+Rel(browser_app, otlp_http, "OTLP", "4318")
+Rel(otlp_http, jaeger_ui, "Store", "Internal")
+Rel(otlp_grpc, jaeger_ui, "Store", "Internal")
+
+note right of docker
+  **Docker Services:**
+  • app (PHP 8.2 + Laravel)
+  • nginx (Web Server)
+  • node (Vite Dev Server)
+  • postgres (Database)
+  • redis (Cache)
+  • jaeger (Tracing)
+
+  **Start:** pnpm docker:up
+  **Stop:** pnpm docker:down
+  **Logs:** pnpm docker:logs
+end note
+
+note right of vite
+  **Hot Module Replacement:**
+  • Vue components reload instantly
+  • CSS updates without refresh
+  • State preserved
+  • Faster than full page reload
+end note
+
+note right of jaeger_ui
+  **Access Points:**
+  • Application: http://localhost:8000
+  • Vite HMR: http://localhost:5173
+  • Jaeger UI: http://localhost:16686
+  • PostgreSQL: localhost:5432
+  • Redis: localhost:6379
+end note
+
+@enduml

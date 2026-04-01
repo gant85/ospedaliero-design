@@ -1,0 +1,120 @@
+@startuml azure-infrastructure
+!include <C4/C4_Deployment>
+!include <azure/AzureCommon>
+!include <azure/Compute/AzureAppService>
+!include <azure/Databases/AzureDatabaseForPostgreSQL>
+!include <azure/Databases/AzureRedisCache>
+!include <azure/Storage/AzureBlobStorage>
+!include <azure/Management/AzureMonitor>
+!include <azure/Networking/AzureFrontDoor>
+!include <azure/DevOps/AzureDevOps>
+!include <azure/Identity/AzureActiveDirectory>
+
+title Azure Production Infrastructure
+
+LAYOUT_LEFT_RIGHT()
+
+Deployment_Node(internet, "Internet") {
+    Person(user, "User", "Web Browser")
+}
+
+Deployment_Node(azure, "Azure Cloud", "Production Environment") {
+    Deployment_Node(networking, "Networking Layer") {
+        AzureFrontDoor(frontdoor, "Azure Front Door", "CDN + WAF", "Global load balancing & SSL termination")
+    }
+
+    Deployment_Node(compute, "Compute Layer") {
+        AzureAppService(appservice, "App Service", "PHP 8.2 Linux", "Laravel + Vue.js SPA\nB1 tier (1 vCPU, 1.75 GB RAM)")
+    }
+
+    Deployment_Node(data, "Data Layer") {
+        AzureDatabaseForPostgreSQL(postgres, "PostgreSQL", "Flexible Server", "Sessions, cache, preferences\nBurstable B1ms (1 vCore, 2 GB)")
+        AzureRedisCache(redis, "Redis Cache", "Premium P1", "API response caching\n6 GB cache, SSL enabled")
+    }
+
+    Deployment_Node(storage, "Storage Layer") {
+        AzureBlobStorage(blob, "Blob Storage", "Standard LRS", "File uploads, assets")
+    }
+
+    Deployment_Node(monitoring, "Observability Layer") {
+        AzureMonitor(insights, "Application Insights", "OpenTelemetry", "Distributed tracing\nMetrics & logs")
+    }
+
+    Deployment_Node(identity, "Identity & Access") {
+        AzureActiveDirectory(entra, "Azure Entra ID", "OAuth2/OIDC", "Microsoft SSO authentication\nUser provisioning")
+    }
+}
+
+Deployment_Node(cicd, "CI/CD") {
+    AzureDevOps(devops, "Azure DevOps", "Pipelines", "Build & Deploy automation")
+}
+
+System_Ext(external_api, "External APIs", "User/Order/Analytics Services")
+System_Ext(sonarcloud, "SonarCloud", "Code Quality & Security")
+
+' Relationships
+Rel(user, frontdoor, "HTTPS", "https://showcase.app")
+Rel(user, entra, "OAuth2", "Microsoft login")
+Rel(entra, appservice, "Callback", "Authorization code + tokens")
+Rel(frontdoor, appservice, "HTTPS", "Backend routing")
+Rel(appservice, postgres, "TLS", "TCP 5432")
+Rel(appservice, redis, "TLS", "TCP 6380")
+Rel(appservice, blob, "HTTPS", "Storage SDK")
+Rel(appservice, insights, "OTLP", "Telemetry")
+Rel(appservice, external_api, "HTTPS", "Bearer Token")
+
+Rel(devops, appservice, "Deploy", "ZIP Deploy")
+Rel(devops, sonarcloud, "Quality Gate", "CI/CD Pipeline")
+
+note right of appservice
+  **App Service Configuration:**
+  • Runtime: PHP 8.2
+  • Always On: Enabled
+  • ARR Affinity: Disabled
+  • HTTPS Only: Enabled
+
+  **Environment Variables:**
+  • DB_CONNECTION=pgsql
+  • CACHE_DRIVER=redis
+  • SESSION_DRIVER=redis
+  • EXTERNAL_API_BASE_URL
+  • EXTERNAL_API_TOKEN
+end note
+
+note right of postgres
+  **Database Configuration:**
+  • Version: PostgreSQL 16
+  • SSL Mode: Required
+  • Backup: 7-day retention
+  • High Availability: Zone-redundant
+
+  **Minimal Schema:**
+  Only sessions, cache, preferences
+  NOT business data!
+end note
+
+note right of redis
+  **Cache Configuration:**
+  • Persistence: RDB + AOF
+  • Maxmemory Policy: allkeys-lru
+  • SSL: Required
+  • Clustering: Disabled (single shard)
+
+  **Cache Strategy:**
+  • User list: 5 min TTL
+  • Statistics: 1 min TTL
+  • User details: 5 min TTL
+end note
+
+note right of insights
+  **Monitoring:**
+  • OpenTelemetry SDK integration
+  • Distributed tracing (frontend + backend)
+  • Custom metrics & logs
+  • Alerts on errors & performance
+
+  **Access:**
+  Azure Portal → Application Insights
+end note
+
+@enduml

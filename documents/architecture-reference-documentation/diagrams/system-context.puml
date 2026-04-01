@@ -1,0 +1,40 @@
+@startuml system-context
+!include <C4/C4_Context>
+!include <azure/AzureCommon>
+!include <azure/Identity/AzureActiveDirectory>
+!include <azure/Compute/AzureAppService>
+!include <azure/Management/AzureMonitor>
+!include <logos/sonarqube>
+
+title System Context - Showcase Application
+
+LAYOUT_TOP_DOWN()
+
+Person(user, "User", "End user accessing the application via web browser")
+
+System(showcase, "Showcase Application", "Full-stack Laravel BFF with Vue.js SPA\nAggregates data from external APIs")
+
+AzureActiveDirectory(entra, "Azure Entra ID", "OAuth2/OIDC", "Microsoft SSO authentication")
+
+System_Ext(api1, "External User API", "Provides user data via REST API")
+System_Ext(api2, "External Order API", "Provides order data via REST API")
+System_Ext(api3, "External Analytics API", "Provides analytics data via REST API")
+
+System_Ext(azure, "Azure Cloud", "Production hosting infrastructure")
+System_Ext(jaeger, "Jaeger", "Distributed tracing visualization")
+System_Ext(sonarcloud, "SonarCloud", "Code quality & security analysis", $sprite="sonarqube")
+
+' Relationships
+Rel(user, showcase, "Uses", "HTTPS")
+Rel(user, entra, "Authenticates", "OAuth2/OIDC")
+Rel(entra, showcase, "Returns tokens", "Authorization code flow")
+Rel(showcase, api1, "Fetches user data", "HTTPS + Bearer Token")
+Rel(showcase, api2, "Fetches order data", "HTTPS + Bearer Token")
+Rel(showcase, api3, "Fetches analytics", "HTTPS + Bearer Token")
+Rel(showcase, jaeger, "Sends traces", "OTLP")
+Rel(showcase, azure, "Deployed to", "Azure DevOps")
+Rel_Back(sonarcloud, showcase, "Analyzes code", "CI/CD Pipeline")
+
+SHOW_LEGEND()
+
+@enduml

@@ -1,0 +1,85 @@
+@startuml azure-entra-auth-with-roles
+!theme plain
+title Azure Entra ID Authentication with Role Synchronization
+
+actor User
+participant "Browser" as Browser
+participant "Laravel App\n(showcase)" as App
+participant "Azure Entra\nOAuth2" as Azure
+participant "Microsoft Graph\nAPI" as Graph
+database "PostgreSQL" as DB
+
+User -> Browser: 1. Clicca "Sign in with Microsoft"
+Browser -> App: 2. GET /auth/azure
+App -> Azure: 3. Redirect to Azure login\n(client_id, redirect_uri, scope)
+Azure -> Browser: 4. Azure login screen
+User -> Azure: 5. Inserisce credenziali
+Azure -> Browser: 6. Authorization code
+Browser -> App: 7. GET /auth/azure/callback?code=CODE
+App -> Azure: 8. POST /token\n(code, client_id, client_secret)
+Azure -> App: 9. access_token, id_token, refresh_token
+App -> App: 10. Socialite resolves user profile
+App -> App: 11. updateOrCreate User in DB
+DB -> DB: 12. User record created/updated\n(azure_id, token, refresh_token)
+App -> App: 13. Start role sync
+App -> Graph: 14. GET /me/memberOf\n(authorization: Bearer access_token)
+Graph -> App: 15. Group memberships\n[{id, displayName, ...}]
+App -> App: 16. Upsert roles by group
+DB -> DB: 17. Sync roles table\n(azure_group_id, name, permissions)
+App -> App: 18. Sync user_roles
+DB -> DB: 19. Insert/Delete user_roles\n(user_id, role_id)
+App -> Browser: 20. Set session cookie
+App -> Browser: 21. Redirect to /
+Browser -> App: 22. GET /
+App -> Browser: 23. Inertia page\n(auth + user + roles + permissions)
+Browser -> User: 24. Dashboard loaded
+
+== Runtime authorization refresh ==
+Browser -> App: 25. Request authenticated route
+App -> App: 26. roles.synced middleware checks TTL
+alt TTL expired
+  App -> Graph: 27. GET /me/memberOf
+  Graph -> App: 28. Updated memberships
+  App -> DB: 29. Resync roles and user_roles
+end
+
+alt Roles removed and invalidation enabled
+  App -> Graph: 30. POST /me/revokeSignInSessions (optional)
+  Graph -> App: 31. 2xx (revokes refresh/session tokens)
+  App -> Browser: 32. Local logout + session invalidation
+  App -> Browser: 33. Redirect to /login
+end
+
+note over App
+  **Service Layer**
+  - RoleManagementService
+    - syncUserRoles(user, access_token)
+    - getUserGroupsFromGraph(access_token)
+    - syncRolesInDatabase(groups)
+    - assignRolesToUser(user, roleIds)
+    - revokeCurrentUserSignInSessions(access_token) [optional]
+end note
+
+note over Graph
+  **Delegated scopes**
+  - User.Read
+  - GroupMember.Read.All (admin consent required)
+  - User.RevokeSessions.All (optional, admin consent required)
+end note
+
+note over Azure,Graph
+  Microsoft-side revocation mainly invalidates refresh/session tokens.
+  Existing access tokens can remain valid until expiry or CAE enforcement.
+  Group membership changes are not guaranteed to invalidate tokens immediately.
+end note
+
+note over DB
+  **Schema**
+  roles:
+  - id, name, azure_group_id,
+    permissions (JSON), created_at
+
+  user_roles:
+  - user_id, role_id, created_at
+end note
+@enduml

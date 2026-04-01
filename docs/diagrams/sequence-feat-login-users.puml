@@ -28,18 +28,17 @@ alt User Does Not Exist (Nuova utenza nel portale)
 end
 BFF -> DB: Create Session
 
-== Feature 6, 8: User & Super User Management (Admin) ==
+== Role Management & Super User Assignments ==
 
-User -> Browser: Access User Management (Admin Role)
-Browser -> BFF: GET /admin/users
-BFF -> DB: Fetch User List
-BFF -> API: GET /erp/users (Sync status)
-BFF -> Browser: Display Users
+note over User, EntraID: Roles & Groups managed uniquely in Entra ID
+User -> EntraID: Add/Remove Role or Change Group
+EntraID -> EntraID: Update Identity Token
+EntraID -> Browser: Invalidate Session and Token (Token revocation)
+Browser -> BFF: Re-authentication Required
 
 note over User, BFF: Feature 8: Assign Super User for multi-PDV
 User -> Browser: Assign "Super User" to Group of PDVs
-Browser -> BFF: POST /admin/users/{id}/roles
-BFF -> DB: Update local Roles
+Browser -> BFF: POST /admin/users/{id}/pdv-groups
 BFF -> API: POST /users/{id}/pdv-groups (Associate multiple Point of Sales)
 API -> BFF: 200 OK
 BFF -> Browser: Success Message

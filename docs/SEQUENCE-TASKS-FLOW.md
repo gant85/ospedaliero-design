@@ -15,7 +15,7 @@ This document describes the workflow for tasks and system notifications as outli
 
 2. **Automated Status Notifications**:
    - **Product Restock**: A user can subscribe to an out-of-stock item. Once the external inventory system notifies the Notification Service of availability, an alert is queued for the user.
-   - **Order Lifecycle**: As orders progress through internal states (*Preso in carico, Lavorazione, Spedito*), the External APIs push events to the Notification Service, which the Vue SPA polls via the Laravel BFF to display toast messages or header badges.
+   - **Order Lifecycle**: As orders progress through internal states (*Accepted, Processing, Shipped*), the External APIs push events to the Notification Service, which the Vue SPA polls via the Laravel BFF to display toast messages or header badges.
 
 3. **BFF Acting as Aggregator**:
    - In all these flows, the Laravel BFF is responsible for abstracting the underlying microservices (Orders API, Inventory API, Notifications API) into a single, cohesive `/api/notifications` endpoint for the Vue SPA.

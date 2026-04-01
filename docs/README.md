@@ -13,8 +13,8 @@ The journey begins securely through corporate identity management.
 *Related Document: [Clients Configuration & Context Validation](FEAT-CONTEXT-CLIENTS.md)*
 
 Once authenticated, the system resolves the user's boundaries and operating context geographically and structurally.
-- **ERP Synchronization (Feat 3, 4, 5)**: Client rules and facility configurations (Sedi) are seamlessly integrated and maintained in strict synchronization with the legacy Korian ERP/CRM infrastructure.
-- **Context Switching (Feat 7, 20)**: Super Users can legally change their active operating facility (*Cambio Sede*), while Administrators can execute actions impersonating any client globally to deliver support.
+- **ERP Synchronization (Feat 3, 4, 5)**: Client rules and facility configurations (Facilities) are seamlessly integrated and maintained in strict synchronization with the legacy Korian ERP/CRM infrastructure.
+- **Context Switching (Feat 7, 20)**: Super Users can legally change their active operating facility (*Change Facility*), while Administrators can execute actions impersonating any client globally to deliver support.
 
 ## 3. Product Catalog & Sourcing
 *Related Document: [Product Catalog & Content Delivery](FEAT-PRODUCTS.md)*
@@ -29,14 +29,14 @@ Within the dashboard hub, users explore pharmacological offerings using agile an
 
 The procurement phase transitions seamlessly into logistics and subsequent financial documentation.
 - **Cart Checkout (Feat 17, 18)**: Users assemble real-time carts specifically flagged for depletion against selected internal hospital warehouses.
-- **Historical Tracing (Feat 19, 21, 22)**: The platform surfaces immutable logistical records. Users can download direct PDF copies of validated Invoices (*Fatture*) and Delivery Notes (*DDT*), alongside reviewing their comprehensive order histories.
+- **Historical Tracing (Feat 19, 21, 22)**: The platform surfaces immutable logistical records. Users can download direct PDF copies of validated Invoices (*Invoices*) and Delivery Notes (*Delivery Notes*), alongside reviewing their comprehensive order histories.
 - **Analytical Reporting (Feat 23)**: Powerful aggregated reports surface directly on-screen or can be manually exported (Excel/CSV) for external accounting consolidation.
 
 ## 5. Content Management & Promotions (Admin Exclusives)
 *Related Document: [Content Management & Promotional Engine](FEAT-CONTENT-PROMO.md)*
 
 Administrators actively shape the portal's content, bridging the gap between strict tabular data and a customized modern UX.
-- **Mass Data Imports (Feat 9)**: The foundational ability to ingest massive "Ospedaliero" global pharmaceutical price lists via robust CSV multi-part streaming uploads.
+- **Mass Data Imports (Feat 9)**: The foundational ability to ingest massive "Hospital" global pharmaceutical price lists via robust CSV multi-part streaming uploads.
 - **Formative Services (Feat 24, 25)**: Administrative Editors can broadcast educational content, modular alerts, and operational news across the portal dynamically.
 - **Promotional Ecosystem (Feat 27, 28, 29)**: The graphical interface hosts isolated promotional slots displaying customized products. *Phase 2* ensures these dynamic advertising spaces bind mathematically to targeted, client-specific pricing configurations handled inside the ERP logic.
 

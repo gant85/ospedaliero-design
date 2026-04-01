@@ -13,27 +13,27 @@ participant "Redis Cache" as Cache
 
 note over ERP: Feature 4: ERP/CRM Integration (Legacy Korian)
 
-User -> Browser: Open Client/Sedi Configurations (Gestione Clienti)
+User -> Browser: Open Client/Facility Configurations (Clients Management)
 Browser -> BFF: GET /admin/clients?sync=true
-BFF -> ERP: GET /crm/clients & GET /crm/locations (Sedi)
+BFF -> ERP: GET /crm/clients & GET /crm/locations (Facilities)
 ERP -> BFF: Legacy Korian CRM Data
 BFF -> Cache: Sync & Store Client/Location Map in Redis
 BFF -> Browser: Display Synced Clients & Facilities
 
-== Feature 3, 5: ERP/CRM Configuration (Gestione Clienti) ==
+== Feature 3, 5: ERP/CRM Configuration (Clients Management) ==
 
 User -> Browser: Access Client Configuration Details
 Browser -> BFF: GET /admin/clients/{id}/config
 BFF -> Browser: Existing Master Data (Typology, Limits)
 
-note over User, BFF: Step 1 & 2: Config. Cliente e Sedi (Master Data & Facility Codes)
+note over User, BFF: Step 1 & 2: Client & Facility Config (Master Data & Facility Codes)
 User -> Browser: Edit Client details & Facility specific codes
-Browser -> BFF: PUT /admin/clients/{id} (incl. Sedi configs)
+Browser -> BFF: PUT /admin/clients/{id} (incl. Facility configs)
 BFF -> ERP: PUT /crm/locations/{id}
 ERP -> BFF: Update Confirmed
 
-note over User, BFF: Step 3: Associazione Magazzini di backup alle Sedi
-User -> Browser: Map Fallback Warehouses (Magazzini di backup)
+note over User, BFF: Step 3: Map Backup Warehouses to Facilities
+User -> Browser: Map Fallback Warehouses (Backup Warehouses)
 Browser -> BFF: POST /admin/locations/{id}/backup-warehouses
 BFF -> ERP: POST /crm/locations/{id}/fallback-routing
 ERP -> BFF: Routing mappings saved
@@ -43,7 +43,7 @@ BFF -> Browser: Configuration Applied Successfully
 
 note over User, ERP: Feature 7: Change Facility (Super User)\nFeature 20: Search by Client (Admin)
 
-User -> Browser: Select Target Client or Facility (Cambio sede)
+User -> Browser: Select Target Client or Facility (Change Facility)
 Browser -> BFF: POST /api/context/switch
 BFF -> ERP: Validate User Authorization for Target Context
 ERP -> BFF: Allowed

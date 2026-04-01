@@ -17,7 +17,7 @@ BFF -> API: GET /catalog/search?name=Aspirin
 API -> BFF: Search Results
 BFF -> Browser: Display Live Catalog (Feat 16)
 
-User -> Browser: Change Filter: "Ricerca per Principio Attivo" (Feat 12)
+User -> Browser: Change Filter: "Search by Active Principle" (Feat 12)
 Browser -> BFF: GET /api/products?q=Acetylsalicylic&search_type=active_principle
 BFF -> API: GET /catalog/search?active_ingredient=Acetylsalicylic
 API -> BFF: Medical Equivalents List
@@ -25,7 +25,7 @@ BFF -> Browser: Updated Product Results
 
 == Feature 13, 15: Rich Media Attachments ==
 
-User -> Browser: Click "Visualizza Foglietto / Foto" (Feat 13, 15)
+User -> Browser: Click "View Leaflet / Photo" (Feat 13, 15)
 Browser -> BFF: GET /api/products/{id}/attachments
 BFF -> API: GET /products/{id}/media
 API -> BFF: Presigned Blob URLs (PDFs, Images)
@@ -33,7 +33,7 @@ BFF -> Browser: Render Image / PDF Viewer Component
 
 == Feature 11, 14: Sourcing & Backup Deposits ==
 
-User -> Browser: Check availability / Select Approvvigionamento (Feat 14)
+User -> Browser: Check availability / Select Sourcing (Feat 14)
 Browser -> BFF: GET /api/products/{id}/availability
 BFF -> DepositAPI: GET /inventory/primary?product_id={id}
 
@@ -43,7 +43,7 @@ alt Standard Hospital Deposit has stock
 else Primary Deposit out of stock
     BFF -> DepositAPI: GET /inventory/backup?product_id={id} (Feat 11)
     DepositAPI -> BFF: Stock status in Backup Deposit
-    BFF -> Browser: Show "Disponibile da Deposito Esterno/Back-up"
+    BFF -> Browser: Show "Available from External/Backup Deposit"
 end
 
 @enduml

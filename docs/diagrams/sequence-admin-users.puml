@@ -1,5 +1,5 @@
 @startuml
-title Admin - Gestione Utenti (Aggiunta, Modifica, Eliminazione)
+title Admin - User Management (Create, Update, Delete)
 skinparam maxMessageSize 150
 autonumber
 
@@ -9,39 +9,46 @@ participant "Laravel (BFF)" as BFF
 participant "Entra ID (Graph API)" as EntraID
 database "PostgreSQL (Local)" as DB
 
-== Aggiunta Nuovo Utente ==
-Admin -> Browser: Access "Aggiungi nuovo utente" form
+== Add New User ==
+Admin -> Browser: Access "Add new user" form
 Browser -> BFF: GET /api/admin/roles
 BFF -> EntraID: Fetch available Groups/Roles
 EntraID -> BFF: Role definitions
 BFF -> Browser: Return form options
 
-Admin -> Browser: Compile form (Email, Name, Role, Facilities) & Submit
+Admin -> Browser: Compile form (Email, Name, "Can place orders", Facilities) & Submit
 Browser -> BFF: POST /api/admin/users
-BFF -> EntraID: Create User / B2B Invitation (via Graph API)
+BFF -> EntraID: Create User / Send Invitation via Graph API
+note right of EntraID: The user will configure their own\npassword upon first login via invitation
 EntraID -> BFF: Success (Returns ObjectId)
 
-BFF -> EntraID: Assign selected Group based on Role (e.g. Ospedaliero-Users)
+opt If "Can place orders" is true
+    BFF -> EntraID: Assign ordering role/group (e.g., OrderEnabled)
+    EntraID -> BFF: Role assigned
+end
+
+BFF -> EntraID: Assign selected base Group (e.g. Ospedaliero-Users)
 EntraID -> BFF: Group assignment confirmed
 
-BFF -> DB: Pre-provision local user & save PDV/Facilities mappings
-BFF -> Browser: Display success "Utente aggiunto"
+BFF -> DB: Save user profile & form data locally (Bypasses future JIT check)
+BFF -> DB: Save PDV/Facilities mappings
+BFF -> Browser: Display success "User added successfully"
 
-== Modifica Utente ==
+== Update User ==
 Admin -> Browser: Modify User Role or Facilities
 Browser -> BFF: PUT /api/admin/users/{id}
 BFF -> EntraID: Update Group Memberships (Graph API)
 EntraID -> EntraID: Invalidate active Session / Token for modified user
 EntraID -> BFF: Confirmed
 BFF -> DB: Update Facility mappings locally
-BFF -> Browser: Display success "Utente aggiornato"
+BFF -> Browser: Display success "User updated successfully"
 
-== Eliminazione / Disabilitazione Utente ==
+== Delete / Disable User ==
 Admin -> Browser: Delete User
 Browser -> BFF: DELETE /api/admin/users/{id}
 BFF -> EntraID: Disable/Delete User account (Graph API)
 EntraID -> BFF: Confirmed
 BFF -> DB: Mark user as deleted / inactive
-BFF -> Browser: Display success "Utente eliminato"
+BFF -> Browser: Display success "User deleted successfully"
 
 @enduml

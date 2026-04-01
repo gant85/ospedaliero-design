@@ -17,16 +17,32 @@ Browser -> BFF: GET /login
 BFF -> Browser: Redirect to Entra ID (OIDC)
 User -> EntraID: Authenticate
 EntraID -> BFF: Callback with Auth Code
-BFF -> EntraID: Exchange Code for Access Token
-EntraID -> BFF: User Profile (Email, Name, Roles)
+BFF -> EntraID: Exchange Code for Access & Refresh Tokens
+EntraID -> BFF: Tokens & User Profile (Email, Name, Roles)
 
-BFF -> DB: Check if User Exists locally
-alt User Does Not Exist (Nuova utenza nel portale)
+BFF -> DB: Check if User Exists locally (Local DB / Cache)
+alt User Exists (Admin pre-provisioning)
+    BFF -> DB: Fetch Local Profile & Settings
+else User Does Not Exist (New user in portal)
     BFF -> DB: Create new User Record (JIT Provisioning)
-    BFF -> EntraID: Add User to "Ospedaliero-Users" Group (via Graph API)
+    BFF -> EntraID: Add User to "Hospital-Users" Group (via Graph API)
     EntraID -> BFF: Group assignment successful
 end
-BFF -> DB: Create Session
+
+note over BFF, DB: Token Management
+BFF -> BFF: Store Refresh Token securely (Encrypted/DB)
+BFF -> Browser: Create Laravel Session (HttpOnly Auth Cookie)
+
+== Ongoing Session & Token Refresh ==
+
+Browser -> BFF: Authenticated API Request (Session Cookie)
+BFF -> BFF: Validate internal Session
+alt Access Token is Expired
+    BFF -> EntraID: Exchange Refresh Token for new Access Token
+    EntraID -> BFF: New Access Token
+    BFF -> BFF: Update Access Token in Storage
+end
+BFF -> API: Forward request to Microservices with Valid Token
 
 == Role Management & Super User Assignments ==
 

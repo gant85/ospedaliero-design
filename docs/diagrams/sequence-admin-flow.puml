@@ -21,32 +21,32 @@ else User has Admin Role
     BFF -> Browser: Render Admin Dashboard (Inertia)
 end
 
-== Context Switching (Scelta Cliente / Struttura) ==
+== Context Switching (Client / Facility Selection) ==
 
 note over Admin, BFF: Admins can view data across different clients/facilities
-Admin -> Browser: Open invoices (Fatture) or orders (Storico Ordini)
+Admin -> Browser: Open invoices (Invoices) or orders (Order History)
 Browser -> BFF: GET /api/admin/clients
 BFF -> API: GET /admin/clients (Fetch accessible clients for admin)
-API -> BFF: List of Clients & Structures
+API -> BFF: List of Clients & Facilities
 BFF -> Browser: Display Client Selection
 
-Admin -> Browser: Select specific Client/Structure & Search
-Browser -> BFF: GET /api/invoices?client_id=X&struttura_id=Y
+Admin -> Browser: Select specific Client/Facility & Search
+Browser -> BFF: GET /api/invoices?client_id=X&facility_id=Y
 BFF -> API: GET /invoices with explicit context (client_id=X)
 API -> BFF: Targeted Data Result
 BFF -> Browser: Display Results (PDF/Excel download available)
 
-== Administration Panel (Amministrazione) ==
+== Administration Panel (Administration) ==
 
-note over Admin, API: Specific operations like Gestione Utenti, Offerte, Importazioni
+note over Admin, API: Specific operations like User Management, Offers, Imports
 
-Admin -> Browser: Upload "Ospedaliero" Import File
+Admin -> Browser: Upload "Hospital" Import File
 Browser -> BFF: POST /api/admin/import (Multipart form-data)
 BFF -> API: Stream file to Processing Service
 API -> BFF: Import Job Queued / Started
 BFF -> Browser: Success Notification
 
-Admin -> Browser: Update Offers / News (Gestione Offerte)
+Admin -> Browser: Update Offers / News (Offers Management)
 Browser -> BFF: POST /api/admin/offers
 BFF -> API: POST /offers (Update promotional space)
 API -> BFF: Offer updated

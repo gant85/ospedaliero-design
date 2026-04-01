@@ -11,9 +11,9 @@ participant "ERP/Pricing Engine" as ERP
 participant "Redis Cache" as Cache
 actor "Standard User" as User
 
-== Feature 9: Ospedaliero Import ==
+== Feature 9: Hospital Import ==
 
-Admin -> Browser: Upload "Listino Ospedaliero"
+Admin -> Browser: Upload "Hospital Pricelist"
 Browser -> BFF: POST /admin/import/ospedaliero (Multipart)
 BFF -> ERP: Stream CSV File Data
 ERP -> ERP: Async validation & Upsert Prices
@@ -31,13 +31,13 @@ BFF -> Browser: Success
 
 == Feature 27, 28, 29: Promotions & Ad Placements ==
 
-Admin -> Browser: Configure Ad Space (Spazi promozionali)
+Admin -> Browser: Configure Ad Space (Promotional spaces)
 note left of Browser: Feature 27 & 29
 Browser -> BFF: POST /admin/ads
 BFF -> CMS: Configure Ad Slot visibility & Target Links
 
 note over BFF, ERP: Feature 28: Phase 2 - Dynamic Pricing Sync
-BFF -> ERP: POST /admin/pricing/overrides (Gestione Pricing x Cliente)
+BFF -> ERP: POST /admin/pricing/overrides (Client Pricing Management)
 ERP -> ERP: Apply Discount Matrix
 
 User -> Browser: Access Dashboard

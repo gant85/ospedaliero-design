@@ -15,7 +15,7 @@ participant "External APIs" as API
 
 User -> Browser: Access Application
 Browser -> BFF: GET /
-BFF -> Browser: Redirect to Entra ID (FO Pagina di Login)
+BFF -> Browser: Redirect to Entra ID (Login Page)
 Browser -> EntraID: Present Login Screen
 User -> EntraID: Enter Credentials & Authenticate
 alt Invalid Credentials
@@ -29,13 +29,13 @@ else Valid Credentials
     BFF -> API: GET /users/me (Check Super User / Roles)
     API -> BFF: User Details
     opt is Super User?
-        BFF -> Browser: Prompt 'Scelta Struttura' (Choose Facility)
+        BFF -> Browser: Prompt 'Facility Selection'
         Browser -> BFF: POST /set-struttura
     end
     BFF -> Browser: Redirect to /home
 end
 
-== Home Page Load (HEADER & CONTENUTO HOME PAGE) ==
+== Home Page Load (HEADER & HOME PAGE CONTENT) ==
 
 User -> Browser: Navigate to Home
 Browser -> BFF: GET /home (Inertia Request)
@@ -48,7 +48,7 @@ par Fetch Dashboard Data
         BFF -> Cache: Store in Cache
     end
     
-    BFF -> API: GET /orders/latest (Ultimi ordini effettuati)
+    BFF -> API: GET /orders/latest (Latest placed orders)
     API -> BFF: Latest Orders Data
 end
 
@@ -56,30 +56,30 @@ BFF -> Browser: Inertia Render (Home Component + Data)
 
 == Menu Interaction: Products & Cart ==
 
-User -> Browser: Search/Select Product (Menu: Prodotti)
+User -> Browser: Search/Select Product (Menu: Products)
 Browser -> BFF: GET /api/products?query=...
 BFF -> API: GET /products
 API -> BFF: Product List / Details
-BFF -> Browser: Display Products (Tabella/Lista)
+BFF -> Browser: Display Products (Table/List)
 
 User -> Browser: Add to Cart
 Browser -> BFF: POST /api/cart
 BFF -> API: POST /cart
-API -> BFF: Cart Updated (Verifica disponibilità)
+API -> BFF: Cart Updated (Check availability)
 BFF -> Browser: Update Cart Badge in Header
 
-== Checkout Flow (Menu: Carrello) ==
+== Checkout Flow (Menu: Cart) ==
 
-User -> Browser: Proceed to Checkout (Finalizza online)
+User -> Browser: Proceed to Checkout (Finalize online)
 Browser -> BFF: POST /api/checkout
-BFF -> API: Check User Permissions (Permessi invio ordine?)
+BFF -> API: Check User Permissions (Order submission allowed?)
 API -> BFF: Permission Status
 
 alt Has direct order permission (or is Super User)
-    BFF -> API: POST /orders (Invio ordine)
+    BFF -> API: POST /orders (Submit order)
     API -> BFF: Order Confirmed
 else Needs approval
-    BFF -> API: POST /orders/request (Invia richiesta di finalizzazione)
+    BFF -> API: POST /orders/request (Send finalization request)
     API -> BFF: Request Pending Approval
 end
 

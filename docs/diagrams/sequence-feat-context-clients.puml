@@ -20,11 +20,24 @@ ERP -> BFF: Legacy Korian CRM Data
 BFF -> Cache: Sync & Store Client/Location Map in Redis
 BFF -> Browser: Display Synced Clients & Facilities
 
-User -> Browser: Update Facility Details (Feature 5)
-Browser -> BFF: PUT /admin/locations/{id}
+== Feature 3, 5: ERP/CRM Configuration (Gestione Clienti) ==
+
+User -> Browser: Access Client Configuration Details
+Browser -> BFF: GET /admin/clients/{id}/config
+BFF -> Browser: Existing Master Data (Typology, Limits)
+
+note over User, BFF: Step 1 & 2: Config. Cliente e Sedi (Master Data & Facility Codes)
+User -> Browser: Edit Client details & Facility specific codes
+Browser -> BFF: PUT /admin/clients/{id} (incl. Sedi configs)
 BFF -> ERP: PUT /crm/locations/{id}
 ERP -> BFF: Update Confirmed
-BFF -> Browser: Changes Saved
+
+note over User, BFF: Step 3: Associazione Magazzini di backup alle Sedi
+User -> Browser: Map Fallback Warehouses (Magazzini di backup)
+Browser -> BFF: POST /admin/locations/{id}/backup-warehouses
+BFF -> ERP: POST /crm/locations/{id}/fallback-routing
+ERP -> BFF: Routing mappings saved
+BFF -> Browser: Configuration Applied Successfully
 
 == Feature 7, 20: Context Switching ==
 

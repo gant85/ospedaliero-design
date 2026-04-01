@@ -16,5 +16,9 @@ This functional flow covers the **Gestione Clienti** capabilities and the comple
 ## Flow Details
 
 1. **ERP/CRM Integration**: The BFF serves as a passthrough validation layer, polling or synchronizing client and facility (Sedi) metadata dynamically from the legacy ERP/CRM backend (Korian).
-2. **Context Selection API**: Because Super Users and Administrators are allowed to 'act as' another client or facility, a generic context-switching API allows the frontend to persist a temporary target context.
-3. **Data Request Tunneling**: When the user queries data downstream (like Orders or Invoices), the BFF overrides the default identity query parameters with the active context selected in step 2.
+2. **Master Data Configuration (Admin)**: The backoffice provides a 3-step dedicated flow for administrators to manage Customer settings:
+    - *Step 1: Configurazione Cliente*: Editing client typologies and order limits.
+    - *Step 2: Configurazione Sedi*: Setting facility-level overrides and specialized operational codes.
+    - *Step 3: Associazione Magazzini di backup*: Defining fallback logistics, mapping specific backup warehouses to facilities for continuous supply guarantees.
+3. **Context Selection API**: Because Super Users and Administrators are allowed to 'act as' another client or facility, a generic context-switching API allows the frontend to persist a temporary target context.
+4. **Data Request Tunneling**: When the user queries data downstream (like Orders or Invoices), the BFF overrides the default identity query parameters with the active context selected in step 3.

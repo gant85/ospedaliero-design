@@ -1,0 +1,52 @@
+﻿,,,,,,
+ID,Portale Hospital - Utente Clinica,MACRO FUNZIONALITA',,IMPATTI,FASE,NOTE
+1,"Login - tramite sitema ""ENTRA""",LOGIN,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+2,Login - gestione nuova utenza nel portale,LOGIN,,,FASE 1,
+3,Gestione Clienti (configurazioni),GESTIONE CLIENTI,NUOVA, AMMINISTRATORE,FASE 1,
+4,Integrazione con ERP/CRM dei clienti - si fa presente che siamo gia agganciati a Korian e si desidera andare in continuità,GESTIONE CLIENTI,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+5,Gestione Sedi (configurazioni),GESTIONE CLIENTI,NUOVA, AMMINISTRATORE,FASE 1,
+6,Gestione Utenti (creazione modifica),GESTIONE UTENTI,NUOVA, AMMINISTRATORE,FASE 1,
+7,Gestione cambio sede per super user,GESTIONE UTENTI,NUOVA,- USER,FASE 1,
+8,Inserimento Super User per gruppi con più PDV,GESTIONE UTENTI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+9,"Nuova gestione ""Importazione Ospedaliero""",LISTINI,NUOVA, AMMINISTRATORE,FASE 1,
+10,Ricerca prodotto,PRODOTTO,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+11,Gestione del deposito back-up (non ospedaliero),DEPOSITI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+12,Ricerca prodotto per principio attivo oltre che per nome commerciale,PRODOTTO,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+13,Possibilità di visualizzare Foglietto illustrativo / Documento descrittivo,PRODOTTO,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+14,Possibilità di scelta di approvvigionamento da parte dell'utente,PRODOTTO,,,FASE 1,
+15,Possibilità di visualizzare Foto del prodotto,PRODOTTO,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+16,Catalogo prodotti sempre aggiornato,PRODOTTO,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+17,Carrello,ORDINI,ESISTENTE,USER,FASE 1,
+18,Ordini dal magazzino ospedaliero- carrello,ORDINI,ESISTENTE,USER,FASE 1,
+19,Fatture,FATTURE,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+20,ricerca del cliente/struttura nelle attività dell'amministratore,FATTURE,,,FASE 1,
+21,DDT,DDT,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+22,Storico Ordini,ORDINI,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+23,Analisi e reportistica,REPORT ,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+24,Area servizi - inserimento contenuti formativi e informativi,AREA SERVIZI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+25,Nuova gestione inserimento avvisi/moduli/news,AREA SERVIZI,ESISTENTE,"- USER
+- AMMINISTRATORE",FASE 1,
+26,"Notification (invio carrello, gestione carrello, disponibilità prodotto, nuovo doc/avviso/news)",NOTIFICATION,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+27,Inserimento spazi promozionali solo lato UI con possibilità di aprire form mail,PROMOZIONI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 1,
+28,Gestione del pricing x cliente come nella distribuzione (creazione offerte/promozioni),PROMOZIONI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 2,
+29,Inserimento spazi promozionali che dpendono dal punto 28,PROMOZIONI,NUOVA,"- USER
+- AMMINISTRATORE",FASE 2,
+30,Gestione dei resi?,RESI,NUOVA,-,ON HOLD - ne parliamo quando lo inseriamo per il nuovo P.Farmaceutico,
+31,Integrazione con portale Ginecologi.,INTEGRAZIONE CON GINECOLOGI,NUOVA,-,ON HOLD - ne parliamo quando refiniamo il P.Ginecologia,

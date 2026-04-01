@@ -23,8 +23,8 @@ EntraID -> BFF: User Profile (Email, Name, Roles)
 BFF -> DB: Check if User Exists locally
 alt User Does Not Exist (Nuova utenza nel portale)
     BFF -> DB: Create new User Record (JIT Provisioning)
-    BFF -> API: POST /users/sync (Notify ERP of new portal user)
-    API -> BFF: 201 Created
+    BFF -> EntraID: Add User to "Ospedaliero-Users" Group (via Graph API)
+    EntraID -> BFF: Group assignment successful
 end
 BFF -> DB: Create Session
 
@@ -36,11 +36,12 @@ EntraID -> EntraID: Update Identity Token
 EntraID -> Browser: Invalidate Session and Token (Token revocation)
 Browser -> BFF: Re-authentication Required
 
-note over User, BFF: Feature 8: Assign Super User for multi-PDV
-User -> Browser: Assign "Super User" to Group of PDVs
-Browser -> BFF: POST /admin/users/{id}/pdv-groups
-BFF -> API: POST /users/{id}/pdv-groups (Associate multiple Point of Sales)
-API -> BFF: 200 OK
-BFF -> Browser: Success Message
+note over User, EntraID: Feature 8: Assign Super User for multi-PDV
+User -> EntraID: Add User to "SuperUser-Hospital-{X}" Group (native Entra management)
+EntraID -> EntraID: Update Group Membership & Identity Token
+note over BFF: On next login, BFF reads groups from token\nand provisions Super User access for associated PDVs
+Browser -> BFF: User logs in / token refreshed
+BFF -> BFF: Extract groups from identity token
+BFF -> Browser: Super User status now active for assigned PDVs
 
 @enduml

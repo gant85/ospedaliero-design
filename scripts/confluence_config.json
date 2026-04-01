@@ -1,0 +1,10 @@
+{
+  "default_base_url": "https://ahi-service.atlassian.net/wiki",
+  "default_space_key": "AHIIT",
+  "default_parent_id": "531005441",
+  "project_name": "Reference app Laravel-Vue",
+  "docs_dir": "docs",
+  "action": "upload",
+  "single_file": null,
+  "delete_dir": null
+}

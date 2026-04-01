@@ -1,0 +1,55 @@
+@startuml
+title Features: Cart, Orders & Reporting
+skinparam maxMessageSize 150
+autonumber
+
+actor "User" as User
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "Order Engine" as OrdersAPI
+participant "Billing/ERP API" as BillingAPI
+participant "Report Service" as Analytics
+
+== Feature 17, 18: Cart & Warehouse Sourcing ==
+
+User -> Browser: Add Product to Cart (Carrello)
+Browser -> BFF: POST /api/cart
+BFF -> OrdersAPI: Add item & calculate real-time totals
+OrdersAPI -> BFF: Cart updated
+
+User -> Browser: Checkout (Ordini dal magazzino)
+Browser -> BFF: POST /api/checkout?source=magazzino_ospedaliero
+BFF -> OrdersAPI: Create Order (Deduct from internal warehouse)
+OrdersAPI -> Flow: Trigger fulfillment logic
+OrdersAPI -> BFF: 201 Created (Order ID)
+BFF -> Browser: Order Confirmation Page
+
+== Feature 19, 21, 22: Historical Docs (Invoices & DDT) ==
+
+User -> Browser: View Order History (Storico Ordini)
+Browser -> BFF: GET /api/orders/history
+BFF -> OrdersAPI: GET /orders?user_id={id}
+OrdersAPI -> BFF: Past Orders Data
+BFF -> Browser: Render Order Table
+
+User -> Browser: Download DDT or Invoice
+Browser -> BFF: GET /api/documents/{type}/{id}/download (Feat 19, 21)
+BFF -> BillingAPI: Fetch generated PDF blob/URI
+BillingAPI -> BFF: PDF Document stream
+BFF -> Browser: Trigger File Download
+
+== Feature 23: Analytics and Reporting ==
+
+User -> Browser: Open Analysis/Report Dashboards
+Browser -> BFF: GET /api/reports/purchases?period=last_30_days
+BFF -> Analytics: Request aggregated purchase dataset
+Analytics -> BFF: JSON Aggregated Metrics
+BFF -> Browser: Render Charts & Tables
+
+User -> Browser: Export Report to CSV/Excel
+Browser -> BFF: GET /api/reports/export
+BFF -> Analytics: Generate Excel Dump
+Analytics -> BFF: File Stream
+BFF -> Browser: Trigger File Download
+
+@enduml

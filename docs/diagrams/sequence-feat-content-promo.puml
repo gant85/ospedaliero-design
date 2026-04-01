@@ -1,0 +1,50 @@
+@startuml
+title Features: Content & Promotions Engine
+skinparam maxMessageSize 150
+autonumber
+
+actor "Administrator" as Admin
+participant "Browser (Vue UI)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "Content Service" as CMS
+participant "ERP/Pricing Engine" as ERP
+participant "Redis Cache" as Cache
+actor "Standard User" as User
+
+== Feature 9: Ospedaliero Import ==
+
+Admin -> Browser: Upload "Listino Ospedaliero"
+Browser -> BFF: POST /admin/import/ospedaliero (Multipart)
+BFF -> ERP: Stream CSV File Data
+ERP -> ERP: Async validation & Upsert Prices
+ERP -> BFF: Job queued response
+BFF -> Browser: Import in progress
+
+== Feature 24, 25: Services Area & News Mgmt ==
+
+Admin -> Browser: Create new Formative Video/News
+Browser -> BFF: POST /admin/content
+BFF -> CMS: Create Article/Media Blob
+CMS -> BFF: Content Created
+BFF -> Cache: Invalidate Content Cache
+BFF -> Browser: Success
+
+== Feature 27, 28, 29: Promotions & Ad Placements ==
+
+Admin -> Browser: Configure Ad Space (Spazi promozionali)
+note left of Browser: Feature 27 & 29
+Browser -> BFF: POST /admin/ads
+BFF -> CMS: Configure Ad Slot visibility & Target Links
+
+note over BFF, ERP: Feature 28: Phase 2 - Dynamic Pricing Sync
+BFF -> ERP: POST /admin/pricing/overrides (Gestione Pricing x Cliente)
+ERP -> ERP: Apply Discount Matrix
+
+User -> Browser: Access Dashboard
+Browser -> BFF: GET /api/dashboard
+BFF -> Cache: Check Cache
+Cache -> BFF: Cached Banners/Ads (from CMS) & Formative contents
+BFF -> ERP: Retrieve real-time personalized pricing
+BFF -> Browser: Render Dashboard (Ads, Formative Material, Prices)
+
+@enduml

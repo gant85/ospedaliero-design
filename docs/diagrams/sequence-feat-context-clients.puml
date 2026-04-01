@@ -1,0 +1,46 @@
+@startuml
+title Features: Clients Configuration & Context Switch
+skinparam maxMessageSize 150
+autonumber
+
+actor "Super User / Admin" as User
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "ERP/CRM API" as ERP
+participant "Redis Cache" as Cache
+
+== Feature 3, 4, 5: ERP/CRM Client Integration ==
+
+note over ERP: Feature 4: ERP/CRM Integration (Legacy Korian)
+
+User -> Browser: Open Client/Sedi Configurations (Gestione Clienti)
+Browser -> BFF: GET /admin/clients?sync=true
+BFF -> ERP: GET /crm/clients & GET /crm/locations (Sedi)
+ERP -> BFF: Legacy Korian CRM Data
+BFF -> Cache: Sync & Store Client/Location Map in Redis
+BFF -> Browser: Display Synced Clients & Facilities
+
+User -> Browser: Update Facility Details (Feature 5)
+Browser -> BFF: PUT /admin/locations/{id}
+BFF -> ERP: PUT /crm/locations/{id}
+ERP -> BFF: Update Confirmed
+BFF -> Browser: Changes Saved
+
+== Feature 7, 20: Context Switching ==
+
+note over User, ERP: Feature 7: Change Facility (Super User)\nFeature 20: Search by Client (Admin)
+
+User -> Browser: Select Target Client or Facility (Cambio sede)
+Browser -> BFF: POST /api/context/switch
+BFF -> ERP: Validate User Authorization for Target Context
+ERP -> BFF: Allowed
+BFF -> Browser: 200 OK (Store Context ID in App State/Session)
+
+User -> Browser: Fetch Invoices for Target Context
+Browser -> BFF: GET /api/invoices
+note over BFF: BFF reads current Context ID\nfrom Session rather than Entra ID
+BFF -> ERP: GET /invoices?client_id={ContextID}
+ERP -> BFF: Invoices List
+BFF -> Browser: Display Invoices for Selected Context
+
+@enduml

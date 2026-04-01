@@ -1,0 +1,47 @@
+@startuml
+title Features: Authentication & User Provisioning
+skinparam maxMessageSize 150
+autonumber
+
+actor "User / Admin" as User
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "Microsoft Entra ID" as EntraID
+participant "ERP/CRM API" as API
+database "PostgreSQL (Local)" as DB
+
+== Feature 1, 2: Login & Just-In-Time Provisioning ==
+
+User -> Browser: Click "Login with Microsoft"
+Browser -> BFF: GET /login
+BFF -> Browser: Redirect to Entra ID (OIDC)
+User -> EntraID: Authenticate
+EntraID -> BFF: Callback with Auth Code
+BFF -> EntraID: Exchange Code for Access Token
+EntraID -> BFF: User Profile (Email, Name, Roles)
+
+BFF -> DB: Check if User Exists locally
+alt User Does Not Exist (Nuova utenza nel portale)
+    BFF -> DB: Create new User Record (JIT Provisioning)
+    BFF -> API: POST /users/sync (Notify ERP of new portal user)
+    API -> BFF: 201 Created
+end
+BFF -> DB: Create Session
+
+== Feature 6, 8: User & Super User Management (Admin) ==
+
+User -> Browser: Access User Management (Admin Role)
+Browser -> BFF: GET /admin/users
+BFF -> DB: Fetch User List
+BFF -> API: GET /erp/users (Sync status)
+BFF -> Browser: Display Users
+
+note over User, BFF: Feature 8: Assign Super User for multi-PDV
+User -> Browser: Assign "Super User" to Group of PDVs
+Browser -> BFF: POST /admin/users/{id}/roles
+BFF -> DB: Update local Roles
+BFF -> API: POST /users/{id}/pdv-groups (Associate multiple Point of Sales)
+API -> BFF: 200 OK
+BFF -> Browser: Success Message
+
+@enduml

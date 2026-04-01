@@ -1,0 +1,69 @@
+@startuml
+title Tasks and Notifications Flow (AH-OSP-tasks)
+skinparam maxMessageSize 150
+autonumber
+
+actor "Standard User" as User
+actor "Super User" as SuperUser
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "External API (Orders/Inventory)" as API
+participant "Notification Service" as NotifyAPI
+
+== Order Approval Task Flow ==
+
+User -> Browser: Finalize Order (w/o direct permissions)
+Browser -> BFF: POST /api/checkout
+BFF -> API: Check Permissions (Permessi invio ordine?)
+API -> BFF: Lacks Permission -> Requires Approval
+BFF -> API: POST /orders/request-approval
+API -> BFF: Approval Task Created
+BFF -> NotifyAPI: Create Task/Notification for Super User
+BFF -> Browser: Show "Request Sent to Super User"
+
+SuperUser -> Browser: Access Application
+Browser -> BFF: GET /api/notifications
+BFF -> NotifyAPI: Fetch Pending Tasks
+NotifyAPI -> BFF: List of Pending Approvals
+BFF -> Browser: Display Task in Header (Notifiche)
+
+SuperUser -> Browser: Open Task & Approve Order
+Browser -> BFF: POST /api/tasks/{id}/approve
+BFF -> API: POST /orders/{id}/finalize
+API -> BFF: Order Successfully Created
+BFF -> NotifyAPI: Resolve Task & Create Notification for Standard User
+BFF -> Browser: Success Message
+
+User -> Browser: Refresh / Check Notifications
+Browser -> BFF: GET /api/notifications
+BFF -> Browser: Display "Order Approved & Processed"
+
+== Restock Notification Flow (Farmaco nuovamente disponibile) ==
+
+User -> Browser: View Out of Stock Product
+User -> Browser: Click "Notify me when available"
+Browser -> BFF: POST /api/products/{id}/watch
+BFF -> NotifyAPI: Register Restock Subscription
+BFF -> Browser: Subscription Confirmed
+
+note over API, NotifyAPI: Time passes... Inventory updates
+API -> NotifyAPI: Webhook: Product ID is now In Stock
+NotifyAPI -> NotifyAPI: Generate notifications for subscribed users
+
+User -> Browser: Logs in or polls
+Browser -> BFF: GET /api/notifications
+BFF -> NotifyAPI: Fetch unread notifications
+NotifyAPI -> BFF: "Product X is back in stock"
+BFF -> Browser: Display Notification Toast / Badge
+
+== Order Status Update Notifications ==
+
+note over API, NotifyAPI: Order moves to In Lavorazione / Spedito
+API -> NotifyAPI: System Event: Order Status Changed
+NotifyAPI -> NotifyAPI: Generate status update notification
+
+User -> Browser: Check Dashboard
+Browser -> BFF: GET /api/notifications
+BFF -> Browser: "Order #12345 is now Spedito"
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+title Admin User Flow (AH-OSP-admin)
+skinparam maxMessageSize 150
+autonumber
+
+actor "Administrator" as Admin
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "Microsoft Entra ID" as EntraID
+participant "External APIs" as API
+participant "Redis Cache" as Cache
+
+== Admin Authentication & Authorization ==
+
+Admin -> Browser: Access Admin Portal
+Browser -> BFF: GET /admin
+BFF -> EntraID: Check Entra ID Token & Roles (RBAC)
+alt User lacks Admin Role
+    BFF -> Browser: 403 Forbidden / Redirect to User Home
+else User has Admin Role
+    BFF -> Browser: Render Admin Dashboard (Inertia)
+end
+
+== Context Switching (Scelta Cliente / Struttura) ==
+
+note over Admin, BFF: Admins can view data across different clients/facilities
+Admin -> Browser: Open invoices (Fatture) or orders (Storico Ordini)
+Browser -> BFF: GET /api/admin/clients
+BFF -> API: GET /admin/clients (Fetch accessible clients for admin)
+API -> BFF: List of Clients & Structures
+BFF -> Browser: Display Client Selection
+
+Admin -> Browser: Select specific Client/Structure & Search
+Browser -> BFF: GET /api/invoices?client_id=X&struttura_id=Y
+BFF -> API: GET /invoices with explicit context (client_id=X)
+API -> BFF: Targeted Data Result
+BFF -> Browser: Display Results (PDF/Excel download available)
+
+== Administration Panel (Amministrazione) ==
+
+note over Admin, API: Specific operations like Gestione Utenti, Offerte, Importazioni
+
+Admin -> Browser: Upload "Ospedaliero" Import File
+Browser -> BFF: POST /api/admin/import (Multipart form-data)
+BFF -> API: Stream file to Processing Service
+API -> BFF: Import Job Queued / Started
+BFF -> Browser: Success Notification
+
+Admin -> Browser: Update Offers / News (Gestione Offerte)
+Browser -> BFF: POST /api/admin/offers
+BFF -> API: POST /offers (Update promotional space)
+API -> BFF: Offer updated
+BFF -> Cache: Invalidate existing banners/news cache
+Cache --> BFF: Cache Cleared
+BFF -> Browser: Update Confirmation
+
+@enduml

@@ -1,0 +1,88 @@
+@startuml
+title Main User Flow (AH-OSP)
+skinparam maxMessageSize 150
+autonumber
+
+actor "User" as User
+participant "Browser (Vue SPA)" as Browser
+participant "Laravel (BFF)" as BFF
+participant "Microsoft Entra ID" as EntraID
+participant "Redis Cache" as Cache
+participant "PostgreSQL (Session)" as DB
+participant "External APIs" as API
+
+== Authentication Flow (LOGIN) ==
+
+User -> Browser: Access Application
+Browser -> BFF: GET /
+BFF -> Browser: Redirect to Entra ID (FO Pagina di Login)
+Browser -> EntraID: Present Login Screen
+User -> EntraID: Enter Credentials & Authenticate
+alt Invalid Credentials
+    EntraID -> User: Show Error / Prompt Retry
+else Valid Credentials
+    EntraID -> Browser: Redirect with Auth Code
+    Browser -> BFF: Callback (auth/azure/callback)
+    BFF -> EntraID: Exchange Code for Token
+    EntraID -> BFF: Access Token & User Info
+    BFF -> DB: Store User Session
+    BFF -> API: GET /users/me (Check Super User / Roles)
+    API -> BFF: User Details
+    opt is Super User?
+        BFF -> Browser: Prompt 'Scelta Struttura' (Choose Facility)
+        Browser -> BFF: POST /set-struttura
+    end
+    BFF -> Browser: Redirect to /home
+end
+
+== Home Page Load (HEADER & CONTENUTO HOME PAGE) ==
+
+User -> Browser: Navigate to Home
+Browser -> BFF: GET /home (Inertia Request)
+
+par Fetch Dashboard Data
+    BFF -> Cache: Check Cache (News, Banners)
+    alt Cache Miss
+        BFF -> API: GET /news & GET /banners
+        API -> BFF: Communications & Banners
+        BFF -> Cache: Store in Cache
+    end
+    
+    BFF -> API: GET /orders/latest (Ultimi ordini effettuati)
+    API -> BFF: Latest Orders Data
+end
+
+BFF -> Browser: Inertia Render (Home Component + Data)
+
+== Menu Interaction: Products & Cart ==
+
+User -> Browser: Search/Select Product (Menu: Prodotti)
+Browser -> BFF: GET /api/products?query=...
+BFF -> API: GET /products
+API -> BFF: Product List / Details
+BFF -> Browser: Display Products (Tabella/Lista)
+
+User -> Browser: Add to Cart
+Browser -> BFF: POST /api/cart
+BFF -> API: POST /cart
+API -> BFF: Cart Updated (Verifica disponibilità)
+BFF -> Browser: Update Cart Badge in Header
+
+== Checkout Flow (Menu: Carrello) ==
+
+User -> Browser: Proceed to Checkout (Finalizza online)
+Browser -> BFF: POST /api/checkout
+BFF -> API: Check User Permissions (Permessi invio ordine?)
+API -> BFF: Permission Status
+
+alt Has direct order permission (or is Super User)
+    BFF -> API: POST /orders (Invio ordine)
+    API -> BFF: Order Confirmed
+else Needs approval
+    BFF -> API: POST /orders/request (Invia richiesta di finalizzazione)
+    API -> BFF: Request Pending Approval
+end
+
+BFF -> Browser: Display Order Status / Confirmation
+
+@enduml

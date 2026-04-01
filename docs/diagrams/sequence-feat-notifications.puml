@@ -1,0 +1,40 @@
+@startuml
+title Feature: Notification Engine & Real-Time Alerts
+skinparam maxMessageSize 150
+autonumber
+
+participant "External Service\n(Inventory/Orders)" as External
+queue "Message Broker\n(RabbitMQ/Redis PubSub)" as Broker
+participant "Notification Microservice" as NotifyAPI
+participant "Laravel (BFF)" as BFF
+participant "Browser (Vue SPA)" as Browser
+actor "User / Admin" as User
+
+== Feature 26: Unified Notification Architecture ==
+
+note left of External: Event trigger (e.g. "Order Shipped",\n"Cart Abandoned", "New Document",\n"Product Restocked")
+External -> Broker: Publish Domain Event
+Broker -> NotifyAPI: Consume Event
+
+NotifyAPI -> NotifyAPI: Resolve Target User(s)
+NotifyAPI -> NotifyAPI: Persist Notification to DB
+NotifyAPI -> Broker: Publish "App.Notification" Event (Optional for WebSockets)
+
+User -> Browser: Interact with App (Periodic Polling or Socket)
+
+alt WebSocket Push via Laravel Echo (Preferred)
+    Browser <-[#green]- BFF: WSS/SSE Push Notification Payload
+else Fallback periodic API Polling
+    Browser -> BFF: GET /api/notifications/unread
+    BFF -> NotifyAPI: Fetch unread alerts for Auth User
+    NotifyAPI -> BFF: List of unread alerts
+    BFF -> Browser: JSON Alert List
+end
+
+Browser -> User: Display Toast Notification / Header Badge
+User -> Browser: Clicks on Notification
+Browser -> BFF: POST /api/notifications/{id}/read
+BFF -> NotifyAPI: Mark as read
+BFF -> Browser: Redirect user to deeply linked content\n(e.g., Target Order, Target Product, Target News)
+
+@enduml
